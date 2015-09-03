@@ -1,3 +1,6 @@
+from redis._compat import iteritems
+from redis.exceptions import RedisError
+
 class NotSupportedError(NotImplementedError):
 
     """ We intentionally do not support this feature
@@ -223,12 +226,23 @@ class SubRedis(object):
     def dbsize(self):
         raise NotImplementedError()
 
-    def mset(self, mapping):
-        mapping = {self.appendKeys(key): value for key, value in mapping}
+    def mset(self, *args, **kwargs):
+        if args:
+            if len(args) != 1 or not isinstance(args[0], dict):
+                raise RedisError('MSET requires **kwargs or a single dict arg')
+            kwargs.update(args[0])
+
+        mapping = {self.appendKeys(key): value for key, value in iteritems(kwargs)}
         return self.redis.mset(mapping)
 
-    def msetnx(self, mapping):
-        mapping = {self.appendKeys(key): value for key, value in mapping}
+    def msetnx(self, *args, **kwargs):
+        if args:
+            if len(args) != 1 or not isinstance(args[0], dict):
+                raise RedisError('MSETNX requires **kwargs or a single '
+                                 'dict arg')
+            kwargs.update(args[0])
+
+        mapping = {self.appendKeys(key): value for key, value in iteritems(kwargs)}
         return self.redis.msetnx(mapping)
 
     def object(self, infotype, key):
